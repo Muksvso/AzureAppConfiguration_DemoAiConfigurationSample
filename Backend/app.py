@@ -8,7 +8,7 @@ from llm_configuration import (
     LLMConfiguration,
 )
 from azure.identity import DefaultAzureCredential
-from azure.appconfiguration.provider import load
+from azure.appconfiguration.provider import load, WatchKey
 from azure_open_ai_service import AzureOpenAIService
 from models import ChatRequest, ChatbotMessage
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 def load_configuration():
     credential = DefaultAzureCredential()
     app_config_endpoint = os.getenv("AZURE_APP_CONFIG_ENDPOINT")
-    configurations = load(app_config_endpoint, credential)
+    configurations = load(app_config_endpoint, credential, refresh_on=[WatchKey("AZURE_OPENAI"),WatchKey("CHAT_LLM")])
 
     app.config.update(configurations)
 

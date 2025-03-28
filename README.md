@@ -30,17 +30,17 @@ This repository contains a demo application that showcases integration with Azur
    cd Frontend
    ```
 
-2. Install dependencies:
+1. Install dependencies:
    ```
    npm install
    ```
 
-3. Build the project:
+1. Build the project:
    ```
    npm run build
    ```
 
-4. Start the development server:
+1. Start the development server:
    ```
    npm run dev
    ```
@@ -48,10 +48,7 @@ This repository contains a demo application that showcases integration with Azur
 
 ### 2. Backend Configuration
 
-1. Update the `appsettings.json` file in the Backend directory:
-   - Set the `AppConfig:Endpoint` property to your Azure App Configuration endpoint URL
-
-2. Configure Azure App Configuration with the following settings:
+1. Configure Azure App Configuration with the following settings:
 
    a. **AI Model Configuration**:
    - **Key**: `ChatLLM`
@@ -115,9 +112,9 @@ Ensure you are logged in with an identity that has the following permissions:
 1. Start the backend API:
    ```
    cd Backend
-   dotnet run
+   flask run
    ```
-   The API will be available at `https://localhost:7268`
+   The API will be available at `https://localhost:5000`
 
 2. Ensure the frontend is running (from step 1.4)
 
@@ -125,7 +122,7 @@ Ensure you are logged in with an identity that has the following permissions:
 
 ## Configuration Refresh
 
-The application is configured to automatically refresh configuration settings from Azure App Configuration every 10 seconds, allowing real-time updates to AI model parameters without restarting the service.
+The application is configured to automatically refresh configuration settings from Azure App Configuration every 30 seconds, allowing real-time updates to AI model parameters without restarting the service.
 
 ## Troubleshooting
 
