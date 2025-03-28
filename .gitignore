@@ -96,3 +96,6 @@ dist-ssr
 
 # Coverage reports
 /coverage
+/env
+/Backend/.vscode
+/Backend/__pycache__

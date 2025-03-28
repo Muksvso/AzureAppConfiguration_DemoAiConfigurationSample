@@ -1,0 +1,9 @@
+[project]
+name = "Backend"
+version = "0.1.0"
+description = "A simple Flask application that can make chat requests and is configured with Azure App Configuration."
+
+requires-python = ">=3.10"
+
+[project.dependencies]
+dependencies = "requirements.txt"

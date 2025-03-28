@@ -10,8 +10,9 @@
   },
   "dependencies": {
     "axios": "^1.4.0",
+    "dompurify": "^3.0.3",
     "marked": "^5.0.2",
-    "dompurify": "^3.0.3"
+    "microsoft-chatbot-frontend": "file:"
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.2",
