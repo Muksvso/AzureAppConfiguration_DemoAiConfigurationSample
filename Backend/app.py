@@ -1,15 +1,12 @@
+"""Flask application for Azure OpenAI Service integration."""
+
 import os
 import logging
 from flask import Flask, request, jsonify
-from azure_open_ai_service import AzureOpenAIService
-from llm_configuration import (
-    LLMConfiguration,
-    AzureOpenAIConnectionInfo,
-    LLMConfiguration,
-)
 from azure.identity import DefaultAzureCredential
 from azure.appconfiguration.provider import load, WatchKey
 from azure_open_ai_service import AzureOpenAIService
+from llm_configuration import LLMConfiguration, AzureOpenAIConnectionInfo
 from models import ChatRequest, ChatbotMessage
 
 app = Flask(__name__)
@@ -19,11 +16,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-# Load configuration from Azure App Configuration
 def load_configuration():
+    """Load configuration from Azure App Configuration."""
     credential = DefaultAzureCredential()
     app_config_endpoint = os.getenv("AZURE_APP_CONFIG_ENDPOINT")
-    configurations = load(app_config_endpoint, credential, refresh_on=[WatchKey("AZURE_OPENAI"),WatchKey("CHAT_LLM")])
+    configurations = load(
+        app_config_endpoint,
+        credential,
+        refresh_on=[WatchKey("AZURE_OPENAI"), WatchKey("CHAT_LLM")],
+    )
 
     app.config.update(configurations)
 
@@ -39,14 +40,13 @@ openai_service = AzureOpenAIService(azure_openai_connection_info, llm_configurat
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
+    """Endpoint to handle chat requests."""
     try:
         data = request.get_json()
 
         # Convert history from list of dicts to list of ChatbotMessage objects
         if "history" in data:
-            data["history"] = [
-                ChatbotMessage(**message) for message in data["history"]
-            ]
+            data["history"] = [ChatbotMessage(**message) for message in data["history"]]
 
         message = ChatRequest(**data)
 
@@ -57,7 +57,7 @@ def chat():
         return jsonify(response), 200
 
     except Exception as ex:
-        logger.error(f"Error processing chat request: {ex}")
+        logger.error("Error processing chat request: %s", ex)
         return (
             jsonify({"error": "An error occurred while processing your request"}),
             500,
@@ -66,6 +66,7 @@ def chat():
 
 @app.route("/api/chat/model", methods=["GET"])
 def get_model_name():
+    """Endpoint to get the model name."""
     return jsonify({"model": llm_configuration.model}), 200
 
 

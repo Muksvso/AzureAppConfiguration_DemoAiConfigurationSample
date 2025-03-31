@@ -1,15 +1,23 @@
+"""
+Azure OpenAI Service wrapper for chat completion.
+"""
+
 import logging
+from datetime import datetime, timezone
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
 from models import ChatRequest, ChatResponse, ChatbotMessage
 from llm_configuration import AzureOpenAIConnectionInfo, LLMConfiguration
-from datetime import datetime, timezone
 
 
 logger = logging.getLogger(__name__)
 
 
 class AzureOpenAIService:
+    """
+    Azure OpenAI Service wrapper for chat completion.
+    """
+
     def __init__(
         self, connection_info: AzureOpenAIConnectionInfo, model_config: LLMConfiguration
     ):
@@ -31,6 +39,9 @@ class AzureOpenAIService:
         )
 
     def get_chat_completion(self, request: ChatRequest) -> ChatResponse:
+        """
+        Get chat completion from Azure OpenAI service.
+        """
         messages = self._get_system_messages()
 
         # Add conversation history
@@ -71,7 +82,7 @@ class AzureOpenAIService:
 
     def _get_system_messages(self):
         return [
-            {"role": "system", "content": msg["content"]}
+            {"role": "system", "content": msg.content}
             for msg in self.model_config.messages
-            if msg["role"].lower() == "system"
+            if msg.role.lower() == "system"
         ]
