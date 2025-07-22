@@ -99,3 +99,4 @@ dist-ssr
 /env
 /Backend/.vscode
 /Backend/__pycache__
+/venv

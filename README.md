@@ -50,39 +50,7 @@ This repository contains a demo application that showcases integration with Azur
 
 1. Configure Azure App Configuration with the following settings:
 
-   a. **AI Model Configuration**:
-   - **Key**: `ChatLLM`
-   - **Value**: 
-     ```json
-     {
-       "model_provider": "azure_openai",
-       "model": "{Azure Open AI deployment name}",
-       "temperature": 0.7,
-       "max_completion_tokens": 1000,
-       "messages": [
-         {
-           "role": "system",
-           "content": "You are a helpful Microsoft AI assistant. Be concise, professional, and informative."
-         }
-       ]
-     }
-     ```
-     Replace `{Azure Open AI deployment name}` with your actual deployment name.
-   - **Content Type**: `application/json`
-
-   b. **Azure OpenAI Endpoint**:
-   - **Key**: `AzureOpenAI:Endpoint`
-   - **Value**: `{Endpoint of Azure Open AI resource}`
-
-   c. **Azure OpenAI API Key** (using Key Vault reference):
-   - **Key**: `AzureOpenAI:ApiKey`
-   - **Value**: 
-     ```json
-     {
-       "uri": "{URI of Azure Key Vault secret containing Azure Open AI API key}"
-     }
-     ```
-   - **Content Type**: `application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8`
+## TODO
 
 ### 3. Authentication Setup
 
@@ -112,6 +80,7 @@ Ensure you are logged in with an identity that has the following permissions:
 1. Start the backend API:
    ```
    cd Backend
+   pip install -r requirements.txt
    flask run
    ```
    The API will be available at `https://localhost:5000`
