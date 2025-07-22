@@ -45,7 +45,7 @@ class AzureOpenAIService:
 
         ai_request = self.client.responses.create(
             model=self.model,
-            input=request.message
+            input=messages
         )
 
         response = self.client.responses.retrieve(ai_request.id)
