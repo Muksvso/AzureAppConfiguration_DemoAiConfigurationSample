@@ -4,8 +4,7 @@ Azure OpenAI Service wrapper for chat completion.
 
 import logging
 from datetime import datetime, timezone
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
-from openai import AzureOpenAI
+from azure.identity import DefaultAzureCredential
 from models import ChatRequest, ChatResponse, ChatbotMessage
 from azure.ai.projects import AIProjectClient
 
