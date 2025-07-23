@@ -2,7 +2,6 @@
 
 import os
 import logging
-import uuid
 from flask import Flask, request, jsonify
 from azure.identity import DefaultAzureCredential
 from azure.appconfiguration.provider import load, SettingSelector
@@ -30,8 +29,10 @@ def targeting_accessor():
     # Extract user information from request context
     user_id = request.headers.get('User-Id')
     if not user_id:
-        # Generate unique ID for anonymous users
-        user_id = f"anonymous-{uuid.uuid4().hex[:8]}"
+        # Use session-based approach for anonymous users to maintain consistency
+        # For anonymous users, use a hash of their IP address for consistency across requests
+        user_ip = request.environ.get('REMOTE_ADDR', 'unknown')
+        user_id = f"anonymous-{hash(user_ip) % 10000:04d}"
     
     return TargetingContext(user_id=user_id)
 
@@ -46,11 +47,6 @@ def initialize_app_configuration():
         if not app_config_endpoint:
             raise ValueError("AZURE_APPCONFIGURATION_ENDPOINT environment variable is required")
         
-        # Get AI endpoint from environment variable
-        ai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-        if not ai_endpoint:
-            raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is required")
-        
         # Load configuration with refresh enabled for feature flags
         config = load(
             endpoint=app_config_endpoint,
@@ -59,13 +55,18 @@ def initialize_app_configuration():
             feature_flag_refresh_enabled=True
         )
         
+        # Get AI endpoint from Azure App Configuration
+        ai_endpoint = config.get("ai_endpoint")
+        if not ai_endpoint:
+            raise ValueError("ai_endpoint configuration is required in Azure App Configuration")
+        
         # Initialize feature manager
         feature_manager = FeatureManager(
-            configuration=config,
-            targeting_accessor=targeting_accessor
+            config,
+            targeting_context_accessor=targeting_accessor
         )
         
-        # Initialize OpenAI service with fixed endpoint
+        # Initialize OpenAI service with endpoint from configuration
         openai_service = AzureOpenAIService(ai_endpoint)
         
         logger.info("Azure App Configuration and Feature Management initialized successfully")
