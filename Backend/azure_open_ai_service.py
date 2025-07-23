@@ -16,7 +16,13 @@ class AzureOpenAIService:
     Azure OpenAI Service wrapper for chat completion.
     """
 
-    def __init__(self, ai_endpoint: str, assistant_id: str):
+    def __init__(self):
+        """Initialize service without specific configuration."""
+        self.project_client = None
+        self.assistant_id = None
+
+    def configure(self, ai_endpoint: str, assistant_id: str):
+        """Configure the service with endpoint and assistant ID."""
         self.assistant_id = assistant_id
         self.project_client = AIProjectClient(
             endpoint=ai_endpoint,
@@ -27,6 +33,8 @@ class AzureOpenAIService:
         """
         Get chat completion from Azure OpenAI service.
         """
+        if not self.project_client or not self.assistant_id:
+            raise ValueError("Service not configured. Call configure() first.")
 
         agent = self.project_client.agents.get_agent(agent_id=self.assistant_id)
 
