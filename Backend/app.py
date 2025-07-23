@@ -89,8 +89,14 @@ def initialize_app_configuration():
         raise SystemExit("Application failed to start due to configuration error")
 
 
-# Initialize configuration on startup
-initialize_app_configuration()
+# Initialize configuration on startup (unless explicitly disabled for testing)
+if os.getenv("SKIP_AZURE_INIT") != "true":
+    initialize_app_configuration()
+else:
+    # For testing purposes
+    config = None
+    feature_manager = None
+    openai_service = AzureOpenAIService()
 
 
 # Register services
@@ -119,18 +125,26 @@ def chat():
         targeting_context = targeting_accessor(request)
         
         # Get AI endpoint variant
-        ai_endpoint_variant = feature_manager.get_variant(
-            feature_flag="ai_endpoint",
-            targeting_context=targeting_context
-        )
-        ai_endpoint = ai_endpoint_variant.configuration if ai_endpoint_variant else config.get("ai_endpoint")
+        ai_endpoint = None
+        agent_id = None
         
-        # Get Agent variant
-        agent_variant = feature_manager.get_variant(
-            feature_flag="Agent", 
-            targeting_context=targeting_context
-        )
-        agent_id = agent_variant.configuration if agent_variant else os.getenv("ASSISTANT_ID")
+        if feature_manager:
+            ai_endpoint_variant = feature_manager.get_variant(
+                feature_flag="ai_endpoint",
+                targeting_context=targeting_context
+            )
+            ai_endpoint = ai_endpoint_variant.configuration if ai_endpoint_variant else config.get("ai_endpoint")
+            
+            # Get Agent variant
+            agent_variant = feature_manager.get_variant(
+                feature_flag="Agent", 
+                targeting_context=targeting_context
+            )
+            agent_id = agent_variant.configuration if agent_variant else os.getenv("ASSISTANT_ID")
+        else:
+            # Fallback to environment variables when feature management is not available
+            ai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+            agent_id = os.getenv("ASSISTANT_ID")
         
         if not ai_endpoint or not agent_id:
             logger.error("Missing required configuration: ai_endpoint=%s, agent_id=%s", ai_endpoint, agent_id)
