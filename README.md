@@ -1,101 +1,160 @@
 # AI Configuration Demo Application
 
-This repository contains a demo application that showcases integration with Azure OpenAI services using Azure App Configuration for dynamic AI model configuration.
+This repository contains a demo application that showcases integration with Azure OpenAI services using Azure App Configuration for dynamic AI model configuration with feature variants.
 
 ![Chat Interface Screenshot](Images/ChatScreenshot.png)
 
 ![Configuration Screenshot](Images/ConfigurationScreenshot.png)
 
+## Features
+
+- **Dynamic Model Selection**: Use Azure App Configuration feature variants to switch between AI models without application restart
+- **Automatic Configuration Refresh**: Real-time configuration updates every 30 seconds
+- **Fallback Support**: Graceful fallback to environment variables when Azure App Configuration is unavailable
+- **A/B Testing Ready**: Support for percentage-based allocation across model variants
+- **RESTful Configuration API**: Endpoints to check configuration status and trigger manual refresh
+
 ## Project Structure
 
-- **Backend**: .NET API that integrates with Azure OpenAI
+- **Backend**: Python Flask API that integrates with Azure OpenAI and Azure App Configuration
 - **Frontend**: TypeScript/Vite application that provides a chat interface
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Python 3.10+](https://www.python.org/downloads/)
 - [Node.js](https://nodejs.org/) (v16+)
 - [npm](https://www.npmjs.com/)
 - Azure account with the following services:
   - Azure App Configuration
   - Azure OpenAI
-  - Azure Key Vault
+  - Azure Key Vault (optional, for secure key storage)
 
-## Setup Instructions
+## Quick Start
 
-### 1. Frontend Setup
+### 1. Backend Setup
+
+1. Navigate to the Backend directory:
+   ```bash
+   cd Backend
+   ```
+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Option A: Using Azure App Configuration (Recommended)**
+   
+   Set up Azure App Configuration with feature variants:
+   ```bash
+   export AZURE_APP_CONFIGURATION_CONNECTION_STRING="Endpoint=https://your-config.azconfig.io;Id=xxx;Secret=xxx"
+   ```
+   
+   See [Azure App Configuration Setup Guide](AZURE_APP_CONFIG_SETUP.md) for detailed instructions.
+
+4. **Option B: Using Environment Variables (Fallback)**
+   
+   Set environment variables:
+   ```bash
+   export AZURE_OPENAI_ENDPOINT="https://your-openai.openai.azure.com/"
+   export AZURE_OPENAI_MODEL="gpt-35-turbo"
+   ```
+
+5. Start the backend:
+   ```bash
+   python app.py
+   ```
+   The API will be available at `http://localhost:5000`
+
+### 2. Frontend Setup
 
 1. Navigate to the Frontend directory:
-   ```
+   ```bash
    cd Frontend
    ```
 
-1. Install dependencies:
-   ```
+2. Install dependencies:
+   ```bash
    npm install
    ```
 
-1. Build the project:
-   ```
+3. Build the project:
+   ```bash
    npm run build
    ```
 
-1. Start the development server:
-   ```
+4. Start the development server:
+   ```bash
    npm run dev
    ```
    The frontend will be available at `http://localhost:5173`
 
-### 2. Backend Configuration
+## Configuration Management
 
-1. Configure Azure App Configuration with the following settings:
+### API Endpoints
 
-## TODO
+- **GET `/api/chat/model`**: Get current model configuration and status
+- **POST `/api/config/refresh`**: Manually trigger configuration refresh
+- **POST `/api/chat`**: Send chat messages to the AI model
 
-### 3. Authentication Setup
+### Example API Response
 
-The application uses `DefaultAzureCredential` for authentication, which requires either:
+```json
+{
+  "app_config_enabled": true,
+  "configured": true,
+  "model": "gpt-4",
+  "variant": "gpt4"
+}
+```
 
-1. Authentication via Visual Studio / Visual Studio Code
-2. Authentication via Azure CLI
-3. Managed identity (for deployment scenarios)
+### Dynamic Model Switching
 
-Ensure you are logged in with an identity that has the following permissions:
+When using Azure App Configuration with feature variants:
+
+1. Update variant allocation in Azure Portal
+2. Configuration automatically refreshes within 30 seconds
+3. New chat requests use the updated model configuration
+4. No application restart required
+
+## Authentication
+
+The application uses `DefaultAzureCredential` for authentication, which supports:
+
+1. **Azure CLI** (for local development): `az login`
+2. **Environment variables** (for CI/CD)
+3. **Managed Identity** (for Azure deployments)
+4. **Visual Studio/VS Code** authentication
+
+Required permissions:
 - **Azure App Configuration**: App Configuration Data Reader role
-- **Azure Key Vault**: Key Vault Secret User role for the key vault containing the OpenAI API key
-
-#### Authentication Steps:
-
-1. **Visual Studio Code**:
-   - Install the Azure Account extension
-   - Sign in using the Azure: Sign In command
-
-2. **Azure CLI**:
-   ```
-   az login
-   ```
-
-### 4. Running the Application
-
-1. Start the backend API:
-   ```
-   cd Backend
-   pip install -r requirements.txt
-   flask run
-   ```
-   The API will be available at `https://localhost:5000`
-
-2. Ensure the frontend is running (from step 1.4)
-
-3. Navigate to `http://localhost:5173` in your browser to use the application
-
-## Configuration Refresh
-
-The application is configured to automatically refresh configuration settings from Azure App Configuration every 30 seconds, allowing real-time updates to AI model parameters without restarting the service.
+- **Azure Key Vault**: Key Vault Secret User role (if using Key Vault references)
 
 ## Troubleshooting
 
-- **Authentication issues**: Ensure you're logged in with an account that has appropriate permissions
-- **Key Vault access**: Verify that the identity used by DefaultAzureCredential has proper access to the Key Vault
-- **CORS errors**: Ensure the backend is running and the frontend URL is properly configured in the CORS policy
-- **Model errors**: Verify that your Azure OpenAI deployment name is correct and the model is available
+### Configuration Issues
+
+- **Azure App Configuration not working**: Check connection string and verify the feature flag `AIModelSelection` exists with proper variants
+- **Authentication errors**: Ensure you're logged in with `az login` or have proper managed identity configuration
+- **Model not switching**: Check variant allocation and wait up to 30 seconds for automatic refresh, or call the manual refresh endpoint
+
+### Development Mode
+
+For development without Azure App Configuration, simply set environment variables:
+```bash
+export AZURE_OPENAI_ENDPOINT="https://your-openai.openai.azure.com/"
+export AZURE_OPENAI_MODEL="gpt-35-turbo"
+```
+
+### Debug Information
+
+Check configuration status:
+```bash
+curl http://localhost:5000/api/chat/model
+```
+
+View application logs for detailed information about configuration loading and refresh activities.
+
+## Advanced Configuration
+
+For detailed setup instructions including feature variant configuration, see the [Azure App Configuration Setup Guide](AZURE_APP_CONFIG_SETUP.md).
