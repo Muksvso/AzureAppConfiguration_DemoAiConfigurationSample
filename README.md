@@ -89,10 +89,6 @@ Ensure you are logged in with an identity that has the following permissions:
 
 3. Navigate to `http://localhost:5173` in your browser to use the application
 
-## Configuration Refresh
-
-The application is configured to automatically refresh configuration settings from Azure App Configuration every 30 seconds, allowing real-time updates to AI model parameters without restarting the service.
-
 ## Troubleshooting
 
 - **Authentication issues**: Ensure you're logged in with an account that has appropriate permissions

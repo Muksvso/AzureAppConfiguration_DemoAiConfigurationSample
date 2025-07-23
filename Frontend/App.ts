@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 import { ChatMessage, ChatRequest, ChatResponse } from './types';
 
 export class App {
@@ -12,13 +12,12 @@ export class App {
   private isWaitingForResponse: boolean = false;
 
   public async init(): Promise<void> {
-    const modelName = await this.fetchModelName();
-    this.render(modelName);
+    this.render();
     this.bindElements();
     this.bindEvents();
   }
 
-  private render(modelName: string): void {
+  private render(): void {
     const app = document.getElementById('app');
     if (!app) return;
 
@@ -35,7 +34,7 @@ export class App {
             <img src="./assets/azure-app-configuration-icon.svg" alt="Azure App Configuration Logo" class="welcome-logo" />
             <h2 class="welcome-title">Welcome to Azure App Configuration AI Chat</h2>
             <p class="welcome-description">
-              I'm your AI assistant powered by Azure App Configuration (model: ${modelName}). Ask me anything and I'll do my best to help you.
+              I'm your AI assistant powered by Azure App Configuration. Ask me anything and I'll do my best to help you.
             </p>
           </div>
         </div>
@@ -84,16 +83,6 @@ export class App {
           this.sendButton.disabled = !this.chatInput?.value.trim();
         }
       });
-    }
-  }
-
-  private async fetchModelName(): Promise<string> {
-    try {
-      const response = await axios.get<string>('/api/chat/model');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching model name:', error);
-      return 'unknown';
     }
   }
 

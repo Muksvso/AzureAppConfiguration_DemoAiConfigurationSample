@@ -18,8 +18,9 @@ logger = logging.getLogger(__name__)
 
 # Register services
 ai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-model = os.getenv("AZURE_OPENAI_MODEL")
-openai_service = AzureOpenAIService(ai_endpoint, model)
+assistant_id = os.getenv("ASSISTANT_ID")
+
+openai_service = AzureOpenAIService(ai_endpoint, assistant_id)
 
 
 @app.route("/api/chat", methods=["POST"])
@@ -46,12 +47,6 @@ def chat():
             jsonify({"error": "An error occurred while processing your request"}),
             500,
         )
-
-
-@app.route("/api/chat/model", methods=["GET"])
-def get_model_name():
-    """Endpoint to get the model name."""
-    return openai_service.model, 200
 
 
 if __name__ == "__main__":
