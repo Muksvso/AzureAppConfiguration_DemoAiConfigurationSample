@@ -33,7 +33,6 @@ try:
         endpoint=app_config_endpoint,
         credential=DefaultAzureCredential(),
         feature_flag_enabled=True,
-        refresh_on_read=True,
         on_refresh_success=lambda: logger.info("Configuration refreshed successfully")
     )
     
@@ -49,8 +48,19 @@ except Exception as e:
     logger.error(f"Failed to connect to Azure App Configuration: {e}")
     raise
 
+def get_targeting_context():
+    """Get targeting context for the current user."""
+    from flask import session, has_request_context
+    
+    if not has_request_context():
+        return TargetingContext(user_id=None, groups=[])
+    
+    user_id = session.get('user_id')
+    return TargetingContext(user_id=user_id, groups=[])
+
+
 # Initialize Feature Manager
-feature_manager = FeatureManager(config)
+feature_manager = FeatureManager(config, targeting_context_accessor=get_targeting_context)
 
 # Initialize services - will be created per request based on feature flags
 openai_services = {}
@@ -64,17 +74,10 @@ def assign_user_id():
         logger.info(f"Assigned new user ID: {session['user_id']}")
 
 
-def get_targeting_context():
-    """Get targeting context for the current user."""
-    user_id = session.get('user_id')
-    return TargetingContext(user_id=user_id, groups=[])
-
-
 def get_openai_service():
     """Get the appropriate OpenAI service based on feature flags."""
-    # Get the agent variant from feature management with targeting context
-    targeting_context = get_targeting_context()
-    agent_variant = feature_manager.get_variant("Agent", targeting_context)
+    # Get the agent variant from feature management - context is now provided via accessor
+    agent_variant = feature_manager.get_variant("Agent")
     
     if agent_variant and agent_variant.configuration:
         agent_id = agent_variant.configuration
@@ -84,12 +87,16 @@ def get_openai_service():
         if not agent_id:
             raise ValueError("No agent_id available from feature flags or environment")
     
-    # Cache service instances to avoid recreating them unnecessarily
-    if agent_id not in openai_services:
-        openai_services[agent_id] = AzureOpenAIService(ai_endpoint, agent_id)
-        logger.info(f"Created OpenAI service for agent: {agent_id}")
+    # Use a single service instance since all agents use the same endpoint
+    # Only create the service once and store the agent_id for use in requests
+    if 'openai_service' not in openai_services:
+        openai_services['openai_service'] = AzureOpenAIService(ai_endpoint, agent_id)
+        logger.info(f"Created OpenAI service with endpoint: {ai_endpoint}")
     
-    return openai_services[agent_id]
+    # Update the agent_id for the current request
+    openai_services['openai_service'].assistant_id = agent_id
+    
+    return openai_services['openai_service']
 
 
 @app.route("/api/chat", methods=["POST"])
