@@ -6,10 +6,9 @@ import uuid
 from flask import Flask, request, jsonify, session
 from azure_open_ai_service import AzureOpenAIService
 from models import ChatRequest, ChatbotMessage
-from azure.appconfiguration.provider import SettingsSelector, WatchKey, AzureAppConfigurationProvider
+from azure.appconfiguration.provider import SettingSelector, WatchKey, AzureAppConfigurationProvider
 from azure.identity import DefaultAzureCredential
-from featuremanagement import FeatureManager
-from featuremanagement.targeting import TargetingContext, TargetingContextAccessor
+from featuremanagement import FeatureManager, TargetingContext
 from azure.monitor.opentelemetry import configure_azure_monitor
 
 app = Flask(__name__)
@@ -40,8 +39,8 @@ try:
         endpoint=app_config_endpoint,
         credential=DefaultAzureCredential(),
         selectors=[
-            SettingsSelector(key_filter="ai_endpoint"),
-            SettingsSelector(key_filter="Agent*", label_filter="*")
+            SettingSelector(key_filter="ai_endpoint"),
+            SettingSelector(key_filter="Agent*", label_filter="*")
         ],
         feature_flag_enabled=True,
         feature_flag_refresh_enabled=True,
@@ -53,13 +52,12 @@ except Exception as e:
     raise
 
 # Initialize Feature Manager
-class UserTargetingContextAccessor(TargetingContextAccessor):
-    def get_context(self):
-        user_id = session.get("user_id", "anonymous")
-        return TargetingContext(user_id=user_id, groups=[])
+def targeting_context_accessor():
+    """Get targeting context for the current user."""
+    user_id = session.get("user_id", "anonymous")
+    return TargetingContext(user_id=user_id, groups=[])
 
-targeting_accessor = UserTargetingContextAccessor()
-feature_manager = FeatureManager(config, targeting_context_accessor=targeting_accessor)
+feature_manager = FeatureManager(config, targeting_context_accessor=targeting_context_accessor)
 
 # Get AI endpoint from configuration
 ai_endpoint = config.get("ai_endpoint")
