@@ -2,9 +2,15 @@
 
 import os
 import logging
-from flask import Flask, request, jsonify
+import uuid
+from flask import Flask, request, jsonify, session
 from azure_open_ai_service import AzureOpenAIService
 from models import ChatRequest, ChatbotMessage
+from azure.appconfiguration.provider import SettingsSelector, WatchKey, AzureAppConfigurationProvider
+from azure.identity import DefaultAzureCredential
+from featuremanagement import FeatureManager
+from featuremanagement.targeting import TargetingContext, TargetingContextAccessor
+from azure.monitor.opentelemetry import configure_azure_monitor
 
 app = Flask(__name__)
 
@@ -12,15 +18,63 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Set secret key for sessions
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-in-production")
 
+# Configure Azure Monitor telemetry
+connection_string = os.getenv("ApplicationInsightsConnectionString")
+if connection_string:
+    configure_azure_monitor(connection_string=connection_string)
+    logger.info("Azure Monitor configured")
+else:
+    logger.warning("ApplicationInsightsConnectionString not provided - telemetry disabled")
 
+# Configure Azure App Configuration
+app_config_endpoint = os.getenv("AZURE_APP_CONFIGURATION_ENDPOINT")
+if not app_config_endpoint:
+    raise ValueError("AZURE_APP_CONFIGURATION_ENDPOINT environment variable is required")
 
+# Initialize App Configuration provider with refresh enabled
+try:
+    config = AzureAppConfigurationProvider.load(
+        endpoint=app_config_endpoint,
+        credential=DefaultAzureCredential(),
+        selectors=[
+            SettingsSelector(key_filter="ai_endpoint"),
+            SettingsSelector(key_filter="Agent*", label_filter="*")
+        ],
+        feature_flag_enabled=True,
+        feature_flag_refresh_enabled=True,
+        on_refresh_success=lambda: logger.info("Configuration refreshed successfully")
+    )
+    logger.info("Azure App Configuration provider initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize Azure App Configuration: {e}")
+    raise
 
-# Register services
-ai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-assistant_id = os.getenv("ASSISTANT_ID")
+# Initialize Feature Manager
+class UserTargetingContextAccessor(TargetingContextAccessor):
+    def get_context(self):
+        user_id = session.get("user_id", "anonymous")
+        return TargetingContext(user_id=user_id, groups=[])
 
-openai_service = AzureOpenAIService(ai_endpoint, assistant_id)
+targeting_accessor = UserTargetingContextAccessor()
+feature_manager = FeatureManager(config, targeting_context_accessor=targeting_accessor)
+
+# Get AI endpoint from configuration
+ai_endpoint = config.get("ai_endpoint")
+if not ai_endpoint:
+    raise ValueError("ai_endpoint configuration not found in Azure App Configuration")
+
+# Initialize OpenAI service (without fixed assistant_id)
+openai_service = AzureOpenAIService(ai_endpoint)
+
+@app.before_request
+def assign_user_id():
+    """Assign a unique user ID for targeting if not already present."""
+    if "user_id" not in session:
+        session["user_id"] = str(uuid.uuid4())
+        logger.info(f"Assigned new user ID: {session['user_id']}")
 
 
 @app.route("/api/chat", methods=["POST"])
@@ -38,7 +92,19 @@ def chat():
         if not message:
             return jsonify({"error": "Message cannot be empty"}), 400
 
-        response = openai_service.get_response(message)
+        # Get agent variant from feature management
+        agent_variant = feature_manager.get_variant("Agent")
+        agent_id = None
+        
+        if agent_variant:
+            agent_id = agent_variant.configuration.get("agent_id")
+            logger.info(f"Using agent variant: {agent_variant.name} with agent_id: {agent_id}")
+        
+        if not agent_id:
+            logger.error("No agent_id found in variant configuration")
+            return jsonify({"error": "Agent configuration not available"}), 500
+
+        response = openai_service.get_response(message, agent_id)
         return jsonify(response), 200
 
     except Exception as ex:
