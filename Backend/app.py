@@ -39,8 +39,7 @@ try:
         endpoint=app_config_endpoint,
         credential=DefaultAzureCredential(),
         selectors=[
-            SettingSelector(key_filter="ai_endpoint"),
-            SettingSelector(key_filter="Agent*", label_filter="*")
+            SettingSelector(key_filter="ai_endpoint")
         ],
         feature_flag_enabled=True,
         feature_flag_refresh_enabled=True,
@@ -54,7 +53,7 @@ except Exception as e:
 # Initialize Feature Manager
 def targeting_context_accessor():
     """Get targeting context for the current user."""
-    user_id = session.get("user_id", "anonymous")
+    user_id = session.get("user_id")
     return TargetingContext(user_id=user_id, groups=[])
 
 feature_manager = FeatureManager(config, targeting_context_accessor=targeting_context_accessor)
@@ -72,7 +71,6 @@ def assign_user_id():
     """Assign a unique user ID for targeting if not already present."""
     if "user_id" not in session:
         session["user_id"] = str(uuid.uuid4())
-        logger.info(f"Assigned new user ID: {session['user_id']}")
 
 
 @app.route("/api/chat", methods=["POST"])
