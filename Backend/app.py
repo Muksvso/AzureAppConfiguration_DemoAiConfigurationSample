@@ -2,14 +2,19 @@
 
 import os
 import logging
-from flask import Flask, request, jsonify
+import uuid
+from flask import Flask, request, jsonify, session
 from azure.identity import DefaultAzureCredential
-from azure.appconfiguration.provider import load, SettingSelector
+from azure.appconfiguration.provider import load
+from azure.monitor.opentelemetry import configure_azure_monitor
 from featuremanagement import FeatureManager, TargetingContext
 from azure_open_ai_service import AzureOpenAIService
 from models import ChatRequest, ChatbotMessage
 
+configure_azure_monitor(connection_string=os.getenv("ApplicationInsightsConnectionString"))
+
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -26,15 +31,8 @@ openai_service = None
 
 def targeting_accessor():
     """Targeting accessor to identify users for feature flag targeting."""
-    # Extract user information from request context
-    user_id = request.headers.get('User-Id')
-    if not user_id:
-        # Use session-based approach for anonymous users to maintain consistency
-        # For anonymous users, use a hash of their IP address for consistency across requests
-        user_ip = request.environ.get('REMOTE_ADDR', 'unknown')
-        user_id = f"anonymous-{hash(user_ip) % 10000:04d}"
-    
-    return TargetingContext(user_id=user_id)
+    # Extract user information from request header
+    return TargetingContext(user_id=session['user_id'])
 
 
 def initialize_app_configuration():
@@ -79,6 +77,10 @@ def initialize_app_configuration():
 # Initialize configuration on startup
 initialize_app_configuration()
 
+@app.before_request
+def assign_session_id():
+    if 'user_id' not in session:
+        session['user_id'] = str(uuid.uuid4())
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
