@@ -88,6 +88,12 @@ def chat():
         if not message:
             return jsonify({"error": "Message cannot be empty"}), 400
 
+        # Refresh configuration before accessing feature management
+        try:
+            config.refresh()
+        except Exception as e:
+            logger.warning(f"Failed to refresh configuration: {e}")
+        
         # Get agent variant from feature management
         agent_variant = feature_manager.get_variant("Agent")
         agent_id = None
