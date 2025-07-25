@@ -76,4 +76,5 @@ class AzureOpenAIService:
                 ),
             ]
         )
-        return ChatResponse(message=response_content, history=history)
+        agent_name = getattr(agent, "name", "Agent")
+        return ChatResponse(message=response_content, history=history, agent_name=agent_name)

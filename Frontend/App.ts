@@ -129,9 +129,8 @@ export class App {
       // Update message history with the complete history from response
       this.messageHistory = response.data.history;
 
-      // Add bot message to UI
-      this.addMessageToUI('bot', response.data.message);
-      
+      // Add bot message to UI, including agent name
+      this.addMessageToUI('bot', response.data.message, response.data.agent_name);
     } catch (error) {
       console.error('Error sending message:', error);
       
@@ -151,7 +150,7 @@ export class App {
     }
   }
 
-  private addMessageToUI(role: 'user' | 'bot', content: string): void {
+  private addMessageToUI(role: 'user' | 'bot', content: string, agentName?: string): void {
     if (!this.chatMessages) return;
 
     const messageElement = document.createElement('div');
@@ -160,13 +159,19 @@ export class App {
     // Format the message content (handle markdown for bot messages)
     let formattedContent = content;
     if (role === 'bot') {
-      // Parse markdown and sanitize HTML
       formattedContent = DOMPurify.sanitize(marked(content));
     }
 
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    let agentHeader = '';
+    if (role === 'bot') {
+      const displayName = agentName && agentName.trim() ? agentName : 'Agent';
+      agentHeader = `<div class="agent-name">${DOMPurify.sanitize(displayName)}</div>`;
+    }
+
     messageElement.innerHTML = `
+      ${agentHeader}
       <div class="message-bubble">${role === 'bot' ? formattedContent : content}</div>
       <div class="message-timestamp">${timestamp}</div>
     `;

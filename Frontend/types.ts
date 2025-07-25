@@ -12,4 +12,5 @@ export interface ChatRequest {
 export interface ChatResponse {
   message: string;
   history: ChatMessage[];
+  agent_name: string;
 }
