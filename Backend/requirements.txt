@@ -1,3 +1,6 @@
 flask
 azure-identity
 azure-ai-projects
+azure-appconfiguration-provider
+featuremanagement[AzureMonitor]
+azure-monitor-opentelemetry
