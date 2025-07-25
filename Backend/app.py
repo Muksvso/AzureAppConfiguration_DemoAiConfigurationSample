@@ -4,7 +4,7 @@ import os
 import logging
 import uuid
 import random
-from flask import Flask, request, jsonify, session
+from flask import request, jsonify, session
 from azure.identity import DefaultAzureCredential
 from azure.appconfiguration.provider import load
 from azure.monitor.opentelemetry import configure_azure_monitor
