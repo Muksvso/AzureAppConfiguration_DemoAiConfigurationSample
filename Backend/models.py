@@ -30,3 +30,4 @@ class ChatResponse:
 
     message: str | None = ""
     history: List[ChatbotMessage] = field(default_factory=list)
+    agent_name: str = ""
