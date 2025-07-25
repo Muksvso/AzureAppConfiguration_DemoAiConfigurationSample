@@ -3,15 +3,19 @@
 import os
 import logging
 import uuid
+import random
 from flask import Flask, request, jsonify, session
 from azure.identity import DefaultAzureCredential
 from azure.appconfiguration.provider import load
 from azure.monitor.opentelemetry import configure_azure_monitor
 from featuremanagement import FeatureManager, TargetingContext
+from featuremanagement.azuremonitor import track_event, publish_telemetry
 from azure_open_ai_service import AzureOpenAIService
 from models import ChatRequest, ChatbotMessage
 
-configure_azure_monitor(connection_string=os.getenv("ApplicationInsightsConnectionString"))
+configure_azure_monitor(connection_string=os.getenv("APPLICATION_INSIGHTS_CONNECTION_STRING"))
+
+from flask import Flask
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -19,6 +23,7 @@ app.secret_key = os.urandom(24)
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 
 
@@ -61,7 +66,8 @@ def initialize_app_configuration():
         # Initialize feature manager
         feature_manager = FeatureManager(
             config,
-            targeting_context_accessor=targeting_accessor
+            targeting_context_accessor=targeting_accessor,
+            on_feature_evaluated=publish_telemetry
         )
         
         # Initialize OpenAI service with endpoint from configuration
@@ -110,6 +116,20 @@ def chat():
 
         # Get response using the selected agent
         response = openai_service.get_response(message, agent_id)
+        metrics = {}
+        if agent_variant.name == "newAgent":
+            metrics = {
+                "agent_name": response.agent_name,
+                "CSAT": random.random(2.5, 5)
+               
+            }
+        else:
+             metrics = {
+                "agent_name": response.agent_name,
+                "CSAT": random.random(1, 3)
+               
+            }
+        track_event("agent_metrics",session['user_id'], metrics)
         return jsonify(response), 200
 
     except Exception as ex:
