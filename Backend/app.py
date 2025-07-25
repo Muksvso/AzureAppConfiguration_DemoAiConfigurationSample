@@ -85,6 +85,9 @@ def assign_session_id():
 @app.route("/api/chat", methods=["POST"])
 def chat():
     """Endpoint to handle chat requests."""
+    global config
+
+    config.refresh()
     try:
         data = request.get_json()
 
