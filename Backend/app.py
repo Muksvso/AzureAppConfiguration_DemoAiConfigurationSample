@@ -120,14 +120,12 @@ def chat():
         if agent_variant.name == "newAgent":
             metrics = {
                 "agent_name": response.agent_name,
-                "CSAT": random.random(2.5, 5)
-               
+                "CSAT": random.uniform(2.5, 5)
             }
         else:
-             metrics = {
+            metrics = {
                 "agent_name": response.agent_name,
-                "CSAT": random.random(1, 3)
-               
+                "CSAT": random.uniform(1, 3)
             }
         track_event("agent_metrics",session['user_id'], metrics)
         return jsonify(response), 200
