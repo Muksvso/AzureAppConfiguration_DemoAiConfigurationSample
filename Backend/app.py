@@ -6,9 +6,11 @@ import uuid
 from azure.monitor.opentelemetry import configure_azure_monitor
 
 # Configure Azure Monitor before importing Flask
-configure_azure_monitor(
-    connection_string=os.getenv("ApplicationInsightsConnectionString")
-)
+app_insights_connection_string = os.getenv("ApplicationInsightsConnectionString")
+if app_insights_connection_string:
+    configure_azure_monitor(connection_string=app_insights_connection_string)
+else:
+    print("Warning: ApplicationInsightsConnectionString not set, telemetry will not be enabled")
 
 from flask import Flask, request, jsonify, session
 from azure.appconfiguration.provider import SettingSelector, load
