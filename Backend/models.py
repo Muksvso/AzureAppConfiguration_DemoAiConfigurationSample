@@ -39,6 +39,7 @@ class ChatResponse:
 
 # Create user model
 class Users(UserMixin, db.Model):
+    """Represents a user in the system."""
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(250), unique=True, nullable=False)

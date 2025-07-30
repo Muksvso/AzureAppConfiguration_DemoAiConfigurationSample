@@ -3,14 +3,12 @@
 import os
 import logging
 from flask import Flask, request, jsonify
-from azure_open_ai_service import AzureOpenAIService
-from models import ChatRequest, ChatbotMessage, db, Users
-
 from flask_bcrypt import Bcrypt
-
 from flask_login import LoginManager
 from opentelemetry import trace
 from opentelemetry.trace import get_tracer_provider
+from azure_open_ai_service import AzureOpenAIService
+from models import ChatRequest, ChatbotMessage, db, Users
 
 
 app = Flask(__name__)
@@ -27,6 +25,7 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def loader_user(user_id):
+    """Load user by ID for Flask-Login."""
     return Users.query.get(user_id)
 
 
@@ -73,6 +72,7 @@ def chat():
 # --- Authentication Endpoints ---
 @app.route("/api/login", methods=["POST"])
 def login():
+    """Login user and return JWT token."""
     data = request.get_json()
     username = data.get("username")
     password = data.get("password")
@@ -84,6 +84,7 @@ def login():
 
 @app.route("/api/create_account", methods=["POST"])
 def create_account():
+    """Create a new user account."""
     data = request.get_json()
     username = data.get("username")
     password = data.get("password")
@@ -95,7 +96,7 @@ def create_account():
         db.session.add(user)
         db.session.commit()
         return jsonify({"success": True, "username": user.username}), 201
-    except Exception as e:
+    except Exception:
         return jsonify({"success": False, "error": "Username already exists"}), 409
 
 
