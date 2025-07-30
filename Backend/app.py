@@ -45,7 +45,7 @@ if not app_config_endpoint:
 credential = DefaultAzureCredential()
 
 # Initialize Azure App Configuration provider with refresh enabled for feature flags
-config = AzureAppConfigurationProvider.load(
+config = AzureAppConfigurationProvider(
     endpoint=app_config_endpoint,
     credential=credential,
     refresh_on=[
