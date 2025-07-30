@@ -23,6 +23,39 @@ This repository contains a demo application that showcases integration with Azur
 
 ## Setup Instructions
 
+### Setup Environment Variables
+
+   ```cmd
+   setx AZURE_OPENAI_ENDPOINT "<endpoint-of-your-azure-openai-service>"
+   ```
+
+   If you use Windows PowerShell, run the following command:
+
+   ```azurepowershell
+   $Env:AZURE_OPENAI_ENDPOINT = "<endpoint-of-your-azure-openai-service>"
+   ```
+
+   If you use macOS or Linux, run the following command:
+
+   ```cmd
+   export AZURE_OPENAI_ENDPOINT='<endpoint-of-your-azure-openai-service>'
+   ```
+
+#### For Original Application
+
+- AZURE_OPENAI_ENDPOINT: The endpoint for your Azure OpenAI service
+- ASSISTANT_ID: The ID of the assistant you want to use
+- SQLALCHEMY_DATABASE_URI: Database URI for SQLAlchemy = `sqlite:///db.sqlite` (for local development)
+
+#### For AZD Deployment
+
+- USER_OBJECT_ID: The object ID of the user for whom you want to configure access
+
+#### When Using Azure App Configuration
+
+- AZURE_APPCONFIGURATION_ENDPOINT: The endpoint for your Azure App Configuration
+- APPLICATION_INSIGHTS_CONNECTION_STRING: Connection string for Application Insights (optional)
+
 ### 1. Frontend Setup
 
 1. Navigate to the Frontend directory:
