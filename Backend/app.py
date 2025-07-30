@@ -18,8 +18,7 @@ from opentelemetry import trace
 from opentelemetry.trace import get_tracer_provider
 from azure.appconfiguration.provider import AzureAppConfigurationProvider
 from azure.identity import DefaultAzureCredential
-from featuremanagement import FeatureManager
-from featuremanagement.targeting import TargetingContextAccessor
+from featuremanagement import FeatureManager, TargetingContext
 from azure_open_ai_service import AzureOpenAIService
 from models import ChatRequest, ChatbotMessage, db, Users
 
@@ -58,13 +57,13 @@ config = AzureAppConfigurationProvider.load(
 app.config.update(config)
 
 # Targeting context accessor for feature management
-class UserTargetingContextAccessor(TargetingContextAccessor):
+class UserTargetingContextAccessor:
     def get_targeting_context(self):
         from flask import session, g
         user_id = getattr(g, 'user_id', None)
         if user_id:
-            return {"user_id": user_id}
-        return {}
+            return TargetingContext(user_id=user_id)
+        return TargetingContext()
 
 # Initialize Feature Manager
 targeting_accessor = UserTargetingContextAccessor()
