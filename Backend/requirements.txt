@@ -4,3 +4,6 @@ azure-ai-projects
 flask-login
 flask_sqlalchemy
 flask_bcrypt
+azure-appconfiguration-provider
+featuremanagement[AzureMonitor]
+azure-monitor-opentelemetry
