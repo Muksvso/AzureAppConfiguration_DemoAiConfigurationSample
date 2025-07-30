@@ -100,3 +100,4 @@ dist-ssr
 /Backend/.vscode
 /Backend/__pycache__
 /venv
+Backend/instance/db.sqlite

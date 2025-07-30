@@ -4,3 +4,6 @@ azure-ai-projects
 azure-appconfiguration-provider
 featuremanagement[AzureMonitor]
 azure-monitor-opentelemetry
+flask-login
+flask_sqlalchemy
+flask_bcrypt

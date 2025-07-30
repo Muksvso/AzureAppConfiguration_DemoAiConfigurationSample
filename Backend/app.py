@@ -10,8 +10,14 @@ from azure.appconfiguration.provider import load
 from azure.monitor.opentelemetry import configure_azure_monitor
 from featuremanagement import FeatureManager, TargetingContext
 from featuremanagement.azuremonitor import track_event, publish_telemetry
+from flask import Flask, request, jsonify
+from flask_bcrypt import Bcrypt
+from flask_login import LoginManager
+from opentelemetry import trace
+from opentelemetry.trace import get_tracer_provider
 from azure_open_ai_service import AzureOpenAIService
-from models import ChatRequest, ChatbotMessage
+from models import ChatRequest, ChatbotMessage, db, Users
+
 
 configure_azure_monitor(connection_string=os.getenv("APPLICATION_INSIGHTS_CONNECTION_STRING"))
 
@@ -19,6 +25,24 @@ from flask import Flask
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+bcrypt = Bcrypt(app)
+
+tracer = trace.get_tracer(__name__, tracer_provider=get_tracer_provider())
+
+db.init_app(app)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def loader_user(user_id):
+    """Load user by ID for Flask-Login."""
+    return Users.query.get(user_id)
+
+
+with app.app_context():
+    db.create_all()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -83,6 +107,8 @@ def initialize_app_configuration():
 # Initialize configuration on startup
 initialize_app_configuration()
 
+app.config.update(config)
+
 @app.before_request
 def assign_session_id():
     if 'user_id' not in session:
@@ -136,6 +162,37 @@ def chat():
             jsonify({"error": "An error occurred while processing your request"}),
             500,
         )
+
+
+# --- Authentication Endpoints ---
+@app.route("/api/login", methods=["POST"])
+def login():
+    """Login user and return JWT token."""
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+    user = Users.query.filter_by(username=username).first()
+    if user and bcrypt.check_password_hash(user.password_hash, password):
+        return jsonify({"success": True, "username": user.username}), 200
+    return jsonify({"success": False, "error": "Invalid username or password"}), 401
+
+
+@app.route("/api/create_account", methods=["POST"])
+def create_account():
+    """Create a new user account."""
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+    if not username or not password:
+        return jsonify({"success": False, "error": "Username and password required"}), 400
+    hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
+    user = Users(username, hashed_password)
+    try:
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({"success": True, "username": user.username}), 201
+    except Exception:
+        return jsonify({"success": False, "error": "Username already exists"}), 409
 
 
 if __name__ == "__main__":

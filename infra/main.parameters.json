@@ -1,0 +1,66 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "environmentName": {
+        "value": "${AZURE_ENV_NAME}"
+      },
+      "quoteOfTheDayDefinition": {
+        "value": {
+          "settings": {
+          }
+        }
+      },
+      "principalId": {
+        "value": "${AZURE_PRINCIPAL_ID}"
+      },
+      "LAWname": {
+        "value": "lawpreview"
+      },
+      "location": {
+        "value": "eastus"
+      },
+      "LAWsku": {
+        "value": "pergb2018"
+      },
+      "SAName": {
+        "value": "sapreview"
+      },
+      "SAKind": {
+        "value": "StorageV2"
+      },
+      "SASkuName": {
+        "value": "Standard_LRS"
+      },
+      "SASkuTier": {
+        "value": "Standard"
+      },
+      "AIname": {
+        "value": "aipreview"
+      },
+      "AItype": {
+        "value": "web"
+      },
+      "AIrequestSource": {
+        "value": "Custom Deployment"
+      },
+      "AACname": {
+        "value": "aacpreview"
+      },
+      "AACsku": {
+        "value": "standard"
+      },
+      "AACsoftDeleteRetentionInDays": {
+        "value": 7
+      },
+      "AACenablePurgeProtection": {
+        "value": false
+      },
+      "AACdisableLocalAuth": {
+        "value": false
+      },
+      "AI_ENDPOINT": {
+          "value": "${AZURE_OPENAI_ENDPOINT}"
+      }
+    }
+}

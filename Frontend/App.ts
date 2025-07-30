@@ -1,7 +1,10 @@
 import axios from 'axios';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import { CreateAccountPage } from './CreateAccountPage';
+import { LoginPage } from './LoginPage';
 import { ChatMessage, ChatRequest, ChatResponse } from './types';
+
 
 export class App {
   private chatMessages: HTMLElement | null = null;
@@ -10,11 +13,46 @@ export class App {
   private chatForm: HTMLFormElement | null = null;
   private messageHistory: ChatMessage[] = [];
   private isWaitingForResponse: boolean = false;
+  private username: string | null = null;
 
   public async init(): Promise<void> {
-    this.render();
-    this.bindElements();
-    this.bindEvents();
+    this.username = localStorage.getItem('username');
+    if (!this.username) {
+      this.showLogin();
+    } else {
+      this.render();
+      this.bindElements();
+      this.bindEvents();
+    }
+  }
+
+  private showLogin(): void {
+    const loginPage = new LoginPage(
+      (username: string) => {
+        this.username = username;
+        localStorage.setItem('username', username);
+        this.render();
+        this.bindElements();
+        this.bindEvents();
+      },
+      () => this.showCreateAccount()
+    );
+    loginPage.render();
+  }
+
+  private showCreateAccount(): void {
+    const createAccountPage = new CreateAccountPage(
+      (username: string) => {
+        // Simulate account creation and login
+        this.username = username;
+        localStorage.setItem('username', username);
+        this.render();
+        this.bindElements();
+        this.bindEvents();
+      },
+      () => this.showLogin()
+    );
+    createAccountPage.render();
   }
 
   private render(): void {
@@ -26,6 +64,10 @@ export class App {
         <div class="header-logo">
           <img src="./assets/azure-app-configuration-icon.svg" alt="Azure App Configuration Logo" />
           <h1 class="header-title">Azure App Configuration AI Chat</h1>
+        </div>
+        <div class="header-user">
+          <span class="user-greeting">Hello, ${this.username ? DOMPurify.sanitize(this.username) : ''}</span>
+          <button id="logout-button" class="logout-button">Logout</button>
         </div>
       </header>
       <main class="chat-container">
@@ -59,6 +101,14 @@ export class App {
     this.chatInput = document.getElementById('chat-input') as HTMLInputElement;
     this.sendButton = document.getElementById('send-button') as HTMLButtonElement;
     this.chatForm = document.getElementById('chat-form') as HTMLFormElement;
+    const logoutButton = document.getElementById('logout-button');
+    if (logoutButton) {
+      logoutButton.addEventListener('click', () => {
+        localStorage.removeItem('username');
+        this.username = null;
+        this.showLogin();
+      });
+    }
   }
 
   private bindEvents(): void {
