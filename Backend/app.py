@@ -4,7 +4,7 @@ import os
 import logging
 from flask import Flask, request, jsonify
 from flask_bcrypt import Bcrypt
-from flask_login import LoginManager
+from flask_login import LoginManager, login_user
 from opentelemetry import trace
 from opentelemetry.trace import get_tracer_provider
 from azure_open_ai_service import AzureOpenAIService
@@ -78,6 +78,7 @@ def login():
     password = data.get("password")
     user = Users.query.filter_by(username=username).first()
     if user and bcrypt.check_password_hash(user.password_hash, password):
+        login_user(user)
         return jsonify({"success": True, "username": user.username}), 200
     return jsonify({"success": False, "error": "Invalid username or password"}), 401
 
@@ -95,6 +96,7 @@ def create_account():
     try:
         db.session.add(user)
         db.session.commit()
+        login_user(user)
         return jsonify({"success": True, "username": user.username}), 201
     except Exception:
         return jsonify({"success": False, "error": "Username already exists"}), 409
