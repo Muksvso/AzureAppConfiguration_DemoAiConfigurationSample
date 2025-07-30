@@ -6,7 +6,7 @@ import uuid
 import random
 from flask import request, jsonify, session
 from flask_bcrypt import Bcrypt
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from azure.identity import DefaultAzureCredential
 from azure.appconfiguration.provider import load
 from azure.monitor.opentelemetry import configure_azure_monitor
@@ -27,21 +27,6 @@ app.secret_key = os.urandom(24)
 bcrypt = Bcrypt(app)
 
 tracer = trace.get_tracer(__name__, tracer_provider=get_tracer_provider())
-
-db.init_app(app)
-
-login_manager = LoginManager()
-login_manager.init_app(app)
-
-
-@login_manager.user_loader
-def loader_user(user_id):
-    """Load user by ID for Flask-Login."""
-    return Users.query.get(user_id)
-
-
-with app.app_context():
-    db.create_all()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -71,13 +56,13 @@ def initialize_app_configuration():
             raise ValueError("AZURE_APPCONFIGURATION_ENDPOINT environment variable is required")
 
         # Load configuration with refresh enabled for feature flags
+        breakpoint()
         CONFIG = load(
             endpoint=app_config_endpoint,
             credential=DefaultAzureCredential(),
             feature_flag_enabled=True,
             feature_flag_refresh_enabled=True,
         )
-
         # Get AI endpoint from Azure App Configuration
         ai_endpoint = CONFIG.get("ai_endpoint")
         if not ai_endpoint:
@@ -103,11 +88,27 @@ initialize_app_configuration()
 
 app.config.update(CONFIG)
 
+db.init_app(app)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def loader_user(user_id):
+    """Load user by ID for Flask-Login."""
+    return Users.query.get(user_id)
+
+
+with app.app_context():
+    db.create_all()
 
 @app.before_request
 def assign_session_id():
-    """Assign a unique session ID if not already set."""
-    if "user_id" not in session:
+    """Assign a unique session ID if not already set, or use logged-in user id."""
+    if current_user.is_authenticated:
+        session["user_id"] = str(current_user.get_id())
+    elif "user_id" not in session:
         session["user_id"] = str(uuid.uuid4())
 
 
