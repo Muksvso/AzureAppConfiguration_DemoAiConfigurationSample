@@ -35,19 +35,13 @@ class AzureOpenAIService:
 
         # Add conversation history
         for message in request.history:
-            self.project_client.agents.messages.create(
-                thread_id=thread.id, content=message.content, role=message.role
-            )
+            self.project_client.agents.messages.create(thread_id=thread.id, content=message.content, role=message.role)
 
         # Add current user message
-        self.project_client.agents.messages.create(
-            thread_id=thread.id, content=request.message, role="user"
-        )
+        self.project_client.agents.messages.create(thread_id=thread.id, content=request.message, role="user")
 
         # Create and process an agent run
-        self.project_client.agents.runs.create_and_process(
-            thread_id=thread.id, agent_id=agent.id
-        )
+        self.project_client.agents.runs.create_and_process(thread_id=thread.id, agent_id=agent.id)
 
         response = self.project_client.agents.messages.list(thread_id=thread.id)
 

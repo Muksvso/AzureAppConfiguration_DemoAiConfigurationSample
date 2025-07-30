@@ -1,3 +1,6 @@
 flask
 azure-identity
 azure-ai-projects
+flask-login
+flask_sqlalchemy
+flask_bcrypt

@@ -1,3 +1,112 @@
+/* Login page styles */
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: var(--ms-light-gray);
+}
+
+.login-box {
+  background: var(--ms-white);
+  padding: 40px 32px 32px 32px;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 320px;
+  gap: 20px;
+}
+
+.login-logo {
+  width: 64px;
+  height: 64px;
+}
+
+.login-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ms-black);
+  margin-bottom: 8px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.login-input {
+  padding: 12px 16px;
+  border: 1px solid var(--ms-light-gray);
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: var(--font-family);
+  transition: var(--transition);
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: var(--ms-blue);
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+}
+
+.login-button {
+  background-color: var(--ms-blue);
+  color: var(--ms-white);
+  border: none;
+  border-radius: 4px;
+  padding: 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.login-button:hover, .login-button:focus {
+  background-color: var(--ms-dark-blue);
+}
+
+.login-error {
+  color: var(--ms-red);
+  font-size: 14px;
+  margin-top: 4px;
+  min-height: 18px;
+  text-align: center;
+}
+
+/* Header user styles */
+.header-user {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-greeting {
+  font-size: 15px;
+  color: var(--ms-dark-blue);
+  font-weight: 500;
+}
+
+.logout-button {
+  background: var(--ms-light-gray);
+  color: var(--ms-dark-blue);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.logout-button:hover, .logout-button:focus {
+  background: var(--ms-blue);
+  color: var(--ms-white);
+}
 /* Agent name styles */
 .agent-name {
   font-size: 14px;
