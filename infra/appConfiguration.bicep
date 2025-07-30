@@ -33,10 +33,11 @@ resource SQLAlchemyDatabaseUri 'Microsoft.AppConfiguration/configurationStores/k
 }
 
 resource AzureOpenAIEndpoint 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
-  name: 'AZURE_OPENAI_ENDPOINT'
+  name: 'ai_endpoint'
   parent: appConfigurationStore
   properties: {
-    value: ai_endpoint
+    // Remove double and single quotes from the value
+    value: replace(trim(ai_endpoint), '"', '')
   }
 }
 
