@@ -13,7 +13,7 @@ if connection_string:
 
 from flask import Flask, request, jsonify, session
 from flask_bcrypt import Bcrypt
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from opentelemetry import trace
 from opentelemetry.trace import get_tracer_provider
 from azure.appconfiguration.provider import AzureAppConfigurationProvider
@@ -48,6 +48,7 @@ credential = DefaultAzureCredential()
 config = AzureAppConfigurationProvider(
     endpoint=app_config_endpoint,
     credential=credential,
+    feature_flag_enabled=True,
     refresh_on=[
         {"key": "*", "refresh_interval": 30}  # Refresh all feature flags every 30 seconds
     ]
@@ -56,25 +57,19 @@ config = AzureAppConfigurationProvider(
 # Update Flask config with App Configuration values
 app.config.update(config)
 
-# Targeting context accessor for feature management
-class UserTargetingContextAccessor:
-    def get_targeting_context(self):
-        from flask import session, g
-        user_id = getattr(g, 'user_id', None)
-        if user_id:
-            return TargetingContext(user_id=user_id)
-        return TargetingContext()
+# Targeting context accessor callback for feature management
+def get_targeting_context():
+    from flask import session
+    from flask_login import current_user
+    
+    if current_user.is_authenticated:
+        return TargetingContext(user_id=str(current_user.id))
+    elif 'user_id' in session:
+        return TargetingContext(user_id=session['user_id'])
+    return TargetingContext()
 
 # Initialize Feature Manager
-targeting_accessor = UserTargetingContextAccessor()
-feature_manager = FeatureManager(config, targeting_context_accessor=targeting_accessor)
-
-# Configure refresh success callback
-def on_refresh_success():
-    global feature_manager
-    feature_manager = FeatureManager(config, targeting_context_accessor=targeting_accessor)
-
-config.on_refresh_success = on_refresh_success
+feature_manager = FeatureManager(config, targeting_context_accessor=get_targeting_context)
 
 @login_manager.user_loader
 def loader_user(user_id):
@@ -85,16 +80,13 @@ def loader_user(user_id):
 @app.before_request
 def before_request():
     """Handle request setup including config refresh and user ID assignment."""
-    from flask import g
     
     # Refresh configuration
     config.refresh()
     
-    # Assign user ID for targeting
-    if 'user_id' not in session:
+    # Assign user ID for targeting (for anonymous users)
+    if not current_user.is_authenticated and 'user_id' not in session:
         session['user_id'] = str(uuid.uuid4())
-    
-    g.user_id = session['user_id']
 
 
 with app.app_context():
@@ -105,7 +97,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize AI service (will be configured per request based on feature flags)
-ai_endpoint = config.get("ai_endpoint", os.getenv("AZURE_OPENAI_ENDPOINT"))
+ai_endpoint = config.get("ai_endpoint")
+if not ai_endpoint:
+    raise ValueError("ai_endpoint configuration is required")
 openai_service = AzureOpenAIService(ai_endpoint)
 
 
@@ -126,18 +120,17 @@ def chat():
 
         # Get agent variant from feature flags
         agent_variant = feature_manager.get_variant("Agent")
-        agent_id = None
-        agent_name = "oldAgent"  # default
-        
-        if agent_variant:
-            agent_id = agent_variant.configuration.get("agent_id")
-            agent_name = agent_variant.name if hasattr(agent_variant, 'name') else "newAgent"
-        
-        # Fallback to environment variable if no variant
+        if not agent_variant:
+            return jsonify({"error": "No agent configuration available"}), 500
+            
+        agent_id = agent_variant.configuration.get("agent_id")
         if not agent_id:
-            agent_id = os.getenv("ASSISTANT_ID")
+            return jsonify({"error": "No agent_id configured"}), 500
 
         response = openai_service.get_response(message, agent_id)
+        
+        # Get agent name from the response
+        agent_name = response.agent_name if hasattr(response, 'agent_name') else "Agent"
         
         # Track telemetry
         track_agent_metrics(agent_name)
@@ -157,9 +150,9 @@ def track_agent_metrics(agent_name):
     try:
         # Generate CSAT value based on agent type
         if agent_name == "newAgent":
-            csat_value = random.uniform(2.5, 5.0)
+            csat_value = round(random.uniform(2.5, 5.0), 1)
         else:  # oldAgent
-            csat_value = random.uniform(1.0, 3.0)
+            csat_value = round(random.uniform(1.0, 3.0), 1)
         
         metrics = {
             "agent_name": agent_name,
