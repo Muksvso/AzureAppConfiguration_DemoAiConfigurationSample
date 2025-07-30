@@ -56,7 +56,6 @@ def initialize_app_configuration():
             raise ValueError("AZURE_APPCONFIGURATION_ENDPOINT environment variable is required")
 
         # Load configuration with refresh enabled for feature flags
-        breakpoint()
         CONFIG = load(
             endpoint=app_config_endpoint,
             credential=DefaultAzureCredential(),
