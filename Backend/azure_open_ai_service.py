@@ -16,19 +16,24 @@ class AzureOpenAIService:
     Azure OpenAI Service wrapper for chat completion.
     """
 
-    def __init__(self, ai_endpoint: str, assistant_id: str):
-        self.assistant_id = assistant_id
+    def __init__(self, ai_endpoint: str, default_assistant_id: str = None):
+        self.default_assistant_id = default_assistant_id
         self.project_client = AIProjectClient(
             endpoint=ai_endpoint,
             credential=DefaultAzureCredential(),  # Use Azure Default Credential for authentication
         )
 
-    def get_response(self, request: ChatRequest) -> ChatResponse:
+    def get_response(self, request: ChatRequest, assistant_id: str = None) -> ChatResponse:
         """
         Get chat completion from Azure OpenAI service.
         """
+        
+        # Use provided assistant_id or fall back to default
+        agent_id = assistant_id or self.default_assistant_id
+        if not agent_id:
+            raise ValueError("No assistant_id provided and no default set")
 
-        agent = self.project_client.agents.get_agent(agent_id=self.assistant_id)
+        agent = self.project_client.agents.get_agent(agent_id=agent_id)
 
         # Create a thread for communication
         thread = self.project_client.agents.threads.create()
