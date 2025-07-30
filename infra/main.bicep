@@ -17,6 +17,7 @@ param AACsoftDeleteRetentionInDays int
 param AACenablePurgeProtection bool
 param AACdisableLocalAuth bool
 param ai_endpoint string
+param userObjectId string
 
 // Tags that should be applied to all resources.
 // 
@@ -60,6 +61,7 @@ module appConfiguration './appConfiguration.bicep' = {
     name: '${AACname}${resourceToken}'
     applicationInsightsId: monitoring.outputs.applicationInsightsId
     ai_endpoint: ai_endpoint
+    userObjectId: userObjectId
   }
   scope: rg
 }

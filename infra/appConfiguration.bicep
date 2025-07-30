@@ -6,6 +6,7 @@ param AACenablePurgeProtection bool
 param AACdisableLocalAuth bool
 param applicationInsightsId string
 param ai_endpoint string
+param userObjectId string
 
 resource appConfigurationStore 'Microsoft.AppConfiguration/configurationStores@2023-09-01-preview' = {
   name: name
@@ -80,6 +81,16 @@ resource VariantFeatureFlagGreeting 'Microsoft.AppConfiguration/configurationSto
       }
     }
     '''
+  }
+}
+
+// After appConfiguration module
+resource appConfigRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(appConfigurationStore.name, userObjectId, '516239f1-63e1-4d78-a4de-a74fb236a071')
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '516239f1-63e1-4d78-a4de-a74fb236a071')
+    principalId: userObjectId
+    principalType: 'User'
   }
 }
 

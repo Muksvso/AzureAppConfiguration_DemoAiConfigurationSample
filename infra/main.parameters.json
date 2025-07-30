@@ -61,6 +61,9 @@
       },
       "AI_ENDPOINT": {
           "value": "${AZURE_OPENAI_ENDPOINT}"
+      },
+      "userObjectId": {
+        "value": "${USER_OBJECT_ID}"
       }
     }
 }
