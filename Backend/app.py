@@ -6,7 +6,7 @@ import uuid
 import random
 from flask import request, jsonify, session
 from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, current_user
+from flask_login import LoginManager, current_user, login_user
 from azure.identity import DefaultAzureCredential
 from azure.appconfiguration.provider import load
 from azure.monitor.opentelemetry import configure_azure_monitor
@@ -106,7 +106,7 @@ with app.app_context():
 def assign_session_id():
     """Assign a unique session ID if not already set, or use logged-in user id."""
     if current_user.is_authenticated:
-        session["user_id"] = str(current_user.get_id())
+        session["user_id"] = current_user.username
     elif "user_id" not in session:
         session["user_id"] = str(uuid.uuid4())
 
@@ -164,6 +164,7 @@ def login():
     password = data.get("password")
     user = Users.query.filter_by(username=username).first()
     if user and bcrypt.check_password_hash(user.password_hash, password):
+        login_user(user)
         return jsonify({"success": True, "username": user.username}), 200
     return jsonify({"success": False, "error": "Invalid username or password"}), 401
 
@@ -181,6 +182,7 @@ def create_account():
     try:
         db.session.add(user)
         db.session.commit()
+        login_user(user)
         return jsonify({"success": True, "username": user.username}), 201
     except Exception:
         return jsonify({"success": False, "error": "Username already exists"}), 409
