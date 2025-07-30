@@ -23,6 +23,13 @@ resource appConfigurationStore 'Microsoft.AppConfiguration/configurationStores@2
   }
 }
 
+resource SQLAlchemyDatabaseUri 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  name: 'SQLALCHEMY_DATABASE_URI'
+  parent: appConfigurationStore
+  properties: {
+    value: 'sqlite:///db.sqlite'
+  }
+}
 
 resource AzureOpenAIEndpoint 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
   name: 'AZURE_OPENAI_ENDPOINT'
