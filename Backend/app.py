@@ -5,14 +5,13 @@ import logging
 import uuid
 import random
 from flask import request, jsonify, session
+from flask_bcrypt import Bcrypt
+from flask_login import LoginManager
 from azure.identity import DefaultAzureCredential
 from azure.appconfiguration.provider import load
 from azure.monitor.opentelemetry import configure_azure_monitor
 from featuremanagement import FeatureManager, TargetingContext
 from featuremanagement.azuremonitor import track_event, publish_telemetry
-from flask import Flask, request, jsonify
-from flask_bcrypt import Bcrypt
-from flask_login import LoginManager
 from opentelemetry import trace
 from opentelemetry.trace import get_tracer_provider
 from azure_open_ai_service import AzureOpenAIService
@@ -49,56 +48,51 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-
-
-
 # Global variables for configuration and feature management
-config = None
-feature_manager = None
-openai_service = None
+CONFIG = None
+FEATURE_MANAGER = None
+OPENAI_SERVICE = None
 
 
 def targeting_accessor():
     """Targeting accessor to identify users for feature flag targeting."""
     # Extract user information from request header
-    return TargetingContext(user_id=session['user_id'])
+    return TargetingContext(user_id=session["user_id"])
 
 
 def initialize_app_configuration():
     """Initialize Azure App Configuration and Feature Management."""
-    global config, feature_manager, openai_service
-    
+    global CONFIG, FEATURE_MANAGER, OPENAI_SERVICE
+
     try:
         # Get App Configuration endpoint from environment variable
         app_config_endpoint = os.getenv("AZURE_APPCONFIGURATION_ENDPOINT")
         if not app_config_endpoint:
             raise ValueError("AZURE_APPCONFIGURATION_ENDPOINT environment variable is required")
-        
+
         # Load configuration with refresh enabled for feature flags
-        config = load(
+        CONFIG = load(
             endpoint=app_config_endpoint,
             credential=DefaultAzureCredential(),
             feature_flag_enabled=True,
-            feature_flag_refresh_enabled=True
+            feature_flag_refresh_enabled=True,
         )
-        
+
         # Get AI endpoint from Azure App Configuration
-        ai_endpoint = config.get("ai_endpoint")
+        ai_endpoint = CONFIG.get("ai_endpoint")
         if not ai_endpoint:
             raise ValueError("ai_endpoint configuration is required in Azure App Configuration")
-        
+
         # Initialize feature manager
-        feature_manager = FeatureManager(
-            config,
-            targeting_context_accessor=targeting_accessor,
-            on_feature_evaluated=publish_telemetry
+        FEATURE_MANAGER = FeatureManager(
+            CONFIG, targeting_context_accessor=targeting_accessor, on_feature_evaluated=publish_telemetry
         )
-        
+
         # Initialize OpenAI service with endpoint from configuration
-        openai_service = AzureOpenAIService(ai_endpoint)
-        
+        OPENAI_SERVICE = AzureOpenAIService(ai_endpoint)
+
         logger.info("Azure App Configuration and Feature Management initialized successfully")
-        
+
     except Exception as ex:
         logger.error("Failed to initialize Azure App Configuration: %s", ex)
         raise SystemExit("Application failed to start due to configuration error")
@@ -107,19 +101,22 @@ def initialize_app_configuration():
 # Initialize configuration on startup
 initialize_app_configuration()
 
-app.config.update(config)
+app.config.update(CONFIG)
+
 
 @app.before_request
 def assign_session_id():
-    if 'user_id' not in session:
-        session['user_id'] = str(uuid.uuid4())
+    """Assign a unique session ID if not already set."""
+    if "user_id" not in session:
+        session["user_id"] = str(uuid.uuid4())
+
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
     """Endpoint to handle chat requests."""
-    global config
+    global CONFIG
 
-    config.refresh()
+    CONFIG.refresh()
     try:
         data = request.get_json()
 
@@ -133,27 +130,21 @@ def chat():
             return jsonify({"error": "Message cannot be empty"}), 400
 
         # Get Agent variant from feature flags
-        agent_variant = feature_manager.get_variant("Agent")
+        agent_variant = FEATURE_MANAGER.get_variant("Agent")
         agent_id = agent_variant.configuration if agent_variant else None
-        
+
         if not agent_id:
             logger.error("Missing required configuration: agent_id")
             return jsonify({"error": "Service configuration error"}), 500
 
         # Get response using the selected agent
-        response = openai_service.get_response(message, agent_id)
+        response = OPENAI_SERVICE.get_response(message, agent_id)
         metrics = {}
         if agent_variant.name == "newAgent":
-            metrics = {
-                "agent_name": response.agent_name,
-                "CSAT": round(random.uniform(2.5, 5), 1)
-            }
+            metrics = {"agent_name": response.agent_name, "CSAT": round(random.uniform(2.5, 5), 1)}
         else:
-            metrics = {
-                "agent_name": response.agent_name,
-                "CSAT": round(random.uniform(1, 3), 1)
-            }
-        track_event("agent_metrics",session['user_id'], metrics)
+            metrics = {"agent_name": response.agent_name, "CSAT": round(random.uniform(1, 3), 1)}
+        track_event("agent_metrics", session["user_id"], metrics)
         return jsonify(response), 200
 
     except Exception as ex:
