@@ -172,21 +172,23 @@ export class App {
       };
 
       const response = await axios.post<ChatResponse>('/api/chat', request);
-      
       // Hide typing indicator
       this.hideTypingIndicator();
-
       // Update message history with the complete history from response
       this.messageHistory = response.data.history;
-
       // Add bot message to UI, including agent name
       this.addMessageToUI('bot', response.data.message, response.data.agent_name);
-    } catch (error) {
+    } catch (error: any) {
+      // If unauthorized, redirect to login page
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('username');
+        this.username = null;
+        this.showLogin();
+        return;
+      }
       console.error('Error sending message:', error);
-      
       // Hide typing indicator
       this.hideTypingIndicator();
-      
       // Show error message
       this.addMessageToUI('bot', 'Sorry, I encountered an error. Please try again later.');
     } finally {

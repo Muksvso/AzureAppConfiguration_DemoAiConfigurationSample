@@ -6,7 +6,7 @@ import uuid
 import random
 from flask import request, jsonify, session
 from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, current_user, login_user
+from flask_login import LoginManager, current_user, login_user, login_required
 from azure.identity import DefaultAzureCredential
 from azure.appconfiguration.provider import load
 from azure.monitor.opentelemetry import configure_azure_monitor
@@ -110,8 +110,8 @@ def assign_session_id():
     elif "user_id" not in session:
         session["user_id"] = str(uuid.uuid4())
 
-
 @app.route("/api/chat", methods=["POST"])
+@login_required
 def chat():
     """Endpoint to handle chat requests."""
     global CONFIG
