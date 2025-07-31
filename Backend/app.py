@@ -4,7 +4,7 @@ import os
 import logging
 from flask import Flask, request, jsonify
 from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, login_user
+from flask_login import LoginManager, login_user, login_required
 from opentelemetry import trace
 from opentelemetry.trace import get_tracer_provider
 from azure_open_ai_service import AzureOpenAIService
@@ -42,8 +42,8 @@ assistant_id = os.getenv("ASSISTANT_ID")
 
 openai_service = AzureOpenAIService(ai_endpoint, assistant_id)
 
-
 @app.route("/api/chat", methods=["POST"])
+@login_required
 def chat():
     """Endpoint to handle chat requests."""
     try:
